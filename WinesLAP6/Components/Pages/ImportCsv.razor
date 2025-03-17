@@ -1,0 +1,48 @@
+﻿@page "/import"
+@inject ImportCsvService ImportService
+
+<h3>ImportCsv</h3>
+<Messages Message="@Message"></Messages>
+<InputFile OnChange="HandleUpload"></InputFile>
+<button @onclick="Import" disabled="@(IsFileSelected ? false : true)">Import</button>
+
+@code {
+
+	private IBrowserFile? UploadedFile { get; set; }
+	private bool IsFileSelected = false;
+	private string Message = string.Empty;
+
+	private void HandleUpload(InputFileChangeEventArgs e)
+	{
+		UploadedFile = e.File;
+
+		if (UploadedFile != null)
+		{
+			IsFileSelected = true;
+			Message = $"File to upload: {UploadedFile.Name}";
+		}
+	}
+
+	private async Task Import()
+	{
+		if (UploadedFile == null)
+		{
+			Message = "No file selected";
+			return;
+		}
+
+		var tempPath = Path.GetTempPath();
+		var filePath = Path.Combine(tempPath, UploadedFile.Name);
+
+		await using(var stream = UploadedFile.OpenReadStream())
+		await using(var fileStream = File.Create(filePath))
+		{
+			await stream.CopyToAsync(fileStream);
+		}
+
+		await ImportService.Import(filePath);
+
+		Message = "Import successful.";
+	}
+
+}

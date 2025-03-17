@@ -1,0 +1,123 @@
+﻿@inject WineService WineService
+@inject AuthStateService AuthStateService
+
+@if (IsLoggedIn)
+{
+	<Messages Message="@Message"></Messages>
+}
+
+<input @bind="searchText" @bind:event="oninput" />
+
+<div>
+	<table class="table table-bordered table-light table-hover">
+		<thead class="table-dark">
+			<tr>
+				@if (IsLoggedIn)
+				{
+					<td>Selected</td>
+				}
+				<td>Winename</td>
+				<td>Vintage</td>
+				<td>Region</td>
+				<td>Vintnername</td>
+			</tr>
+		</thead>
+		@if(searchText != string.Empty && FilteredWines.Count == 0)
+		{
+			<tr>
+				<p>Search does not match any results</p>
+			</tr>
+		}
+		else
+		{
+			
+		<tbody>
+			@foreach (var wine in FilteredWines)
+			{
+				<tr>
+					@if (IsLoggedIn)
+					{
+						<td>
+							<InputCheckbox Value="@wine.IsSelected" ValueExpression="() => wine.IsSelected" ValueChanged="(Value)=> OnWineSelectionChanged(wine, Value)"></InputCheckbox>
+						</td>
+					}
+					<td>@wine.WineName</td>
+					<td>@wine.Vintage</td>
+					<td>@wine.Region</td>
+					<td>@wine.VintnerName</td>
+				</tr>
+			}
+		</tbody>
+		}
+	</table>
+</div>
+
+
+@code {
+	[Parameter]
+	public List<WineViewModel> Wines { get; set; } = new List<WineViewModel>();
+	private List<WineViewModel> SelectedWines { get; set; } = new List<WineViewModel>();
+	private List<WineViewModel> FilteredWines => string.IsNullOrEmpty(searchText) ? Wines : Wines.Where(w =>
+		w.WineName.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
+		w.Region.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
+		w.VintnerName.Contains(searchText, StringComparison.OrdinalIgnoreCase) ||
+		w.Vintage.ToString().Contains(searchText, StringComparison.OrdinalIgnoreCase)
+	).ToList();
+
+	private string searchText = string.Empty;
+	private string Message = string.Empty;
+	private event Action? WineSelectionChanged;
+	private bool IsLoggedIn = false;
+
+	protected override async Task OnInitializedAsync()
+	{
+		SelectedWines = Wines.Where(w => w.IsSelected == true).ToList();
+		IsLoggedIn = AuthStateService.IsLoggedIn;
+		await CountWinesAsync();
+	}
+
+	private async Task OnWineSelectionChanged(WineViewModel wine, bool newValue)
+	{
+		await WineService.UpdateWineSelection(wine, newValue);
+
+		if (newValue)
+		{
+			wine.IsSelected = newValue;
+			SelectedWines.Add(wine);
+		}
+		else
+		{
+			wine.IsSelected = false;
+			var storedWine = SelectedWines.FirstOrDefault(w => w.WineId == wine.WineId);
+			if (storedWine != null)
+			{
+				SelectedWines.Remove(storedWine);
+			}
+		}
+
+		await CountWinesAsync();
+
+
+	}
+
+	private async Task CountWinesAsync()
+	{
+		if (SelectedWines.Count <= 10)
+		{
+			Message = $"Selected Wines: {SelectedWines.Count} / 10";
+
+		}
+		else
+		{
+			var lastAddedWine = SelectedWines.Last();
+			lastAddedWine.IsSelected = false;
+			await WineService.UpdateWineSelection(lastAddedWine, false);
+
+			if (lastAddedWine != null)
+			{
+				SelectedWines.Remove(lastAddedWine);
+			}
+		}
+	}
+
+}

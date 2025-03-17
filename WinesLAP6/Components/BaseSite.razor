@@ -1,0 +1,14 @@
+﻿@if (Wines.Count < 1)
+{
+	<p>loading...</p>
+}
+else
+{
+	<WineTables Wines="@Wines"/>
+}
+
+@code {
+	[Parameter]
+	public List<WineViewModel> Wines { get; set; } = new List<WineViewModel>();
+}
+

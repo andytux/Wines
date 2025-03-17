@@ -1,0 +1,21 @@
+﻿@page "/wineCard"
+@inject WineService WineService
+
+<h3>Wine Card</h3>
+
+<BaseSite Wines="@Wines"></BaseSite>
+
+
+@code {
+	private List<WineViewModel> Wines { get; set; } = new List<WineViewModel>();
+
+	protected override async Task OnInitializedAsync()
+	{
+		var wines = await WineService.GetSelectedWines();
+
+		foreach (var wine in wines)
+		{
+			Wines.Add(await WineService.GetWineViewModel(wine));
+		}
+	}
+}

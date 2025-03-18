@@ -65,7 +65,7 @@ namespace WinesLAP6.Services
 				}
 				else
 				{
-					storedWine.IsSelected = false;
+					storedWine.IsSelected = isSelected;
 				}
 
 				dbContext.Wines.Update(storedWine);

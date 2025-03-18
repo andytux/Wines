@@ -30,7 +30,7 @@ namespace WinesLAP6.Services
 			{
 				var hashBytes = sha256.ComputeHash(hashableBytes);
 
-				return Encoding.UTF8.GetString(hashBytes);
+				return Convert.ToBase64String(hashBytes);
 			}
 		}
 
